@@ -78,6 +78,7 @@ fn track_tool_telemetry(content: &MessageContent, all_messages: &[Message]) {
                 counter.goose.tool_completions = 1,
                 tool_name = %tool_name,
                 result = %result_status,
+                tool_response = ?tool_response,
                 "Tool call completed"
             );
         }

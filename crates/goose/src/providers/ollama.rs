@@ -128,11 +128,20 @@ impl OllamaProvider {
     }
 
     async fn post(&self, payload: &Value) -> Result<Value, ProviderError> {
+        tracing::debug!(
+            "Ollama request payload: {}",
+            serde_json::to_string_pretty(&payload).unwrap_or_default()
+        );
         let response = self
             .api_client
             .response_post("v1/chat/completions", payload)
             .await?;
-        handle_response_openai_compat(response).await
+        let response_json = handle_response_openai_compat(response).await?;
+        tracing::debug!(
+            "Ollama response: {}",
+            serde_json::to_string_pretty(&response_json).unwrap_or_default()
+        );
+        Ok(response_json)
     }
 }
 
