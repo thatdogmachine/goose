@@ -93,6 +93,11 @@
             cargo-watch
             cargo-edit
             clippy
+            gemini-cli
+            go_1_25
+            just
+            nodejs_24
+            ripgrep
             rustfmt
             xorg.libxcb
             dbus
