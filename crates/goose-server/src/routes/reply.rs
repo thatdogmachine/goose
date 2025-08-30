@@ -44,6 +44,7 @@ fn track_tool_telemetry(content: &MessageContent, all_messages: &[Message]) {
             if let Ok(tool_call) = &tool_request.tool_call {
                 tracing::info!(monotonic_counter.goose.tool_calls = 1,
                     tool_name = %tool_call.name,
+                    tool_output = format!("{:?}", tool_call.arguments),
                     "Tool call started"
                 );
             }
