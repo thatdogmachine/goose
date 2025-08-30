@@ -8,9 +8,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixpkgs.url = "nixpkgs/nixos-unstable";
+    # This new input pins 'just' to a specific commit.
+    # You can change this URL to any commit hash you need.
+    just-pinned = {
+      url = "github:NixOS/nixpkgs/nixos-25.05";
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils, rust-overlay }:
+  outputs = { self, nixpkgs, flake-utils, rust-overlay, just-pinned }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         overlays = [ rust-overlay.overlays.default ];
