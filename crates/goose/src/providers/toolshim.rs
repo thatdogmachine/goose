@@ -40,7 +40,7 @@ use crate::providers::formats::openai::create_request;
 use anyhow::Result;
 use mcp_core::tool::ToolCall;
 use reqwest::Client;
-use rmcp::model::{RawContent, Tool};
+use rmcp::model::{RawContent, Role, Tool};
 use serde_json::{json, Value};
 use std::ops::Deref;
 use std::time::Duration;
@@ -207,6 +207,7 @@ impl OllamaInterpreter {
         // Extract tool_calls array from the response
         if response.get("message").is_some() && response["message"].get("content").is_some() {
             let content = response["message"]["content"].as_str().unwrap_or_default();
+            tracing::debug!("Tool interpreter response content: {}", content);
 
             // Try to parse the content as JSON
             if let Ok(content_json) = serde_json::from_str::<Value>(content) {
@@ -232,6 +233,7 @@ impl OllamaInterpreter {
             }
         }
 
+        tracing::debug!("Extracted tool calls: {:?}", tool_calls);
         Ok(tool_calls)
     }
 }
@@ -318,8 +320,19 @@ pub fn convert_tool_messages_to_text(messages: &[Message]) -> Conversation {
             let mut new_content = Vec::new();
             let mut has_tool_content = false;
 
+            let is_assistant_with_tool_request = message.role == Role::Assistant
+                && message
+                    .content
+                    .iter()
+                    .any(|c| matches!(c, MessageContent::ToolRequest(_)));
+
             for content in &message.content {
                 match content {
+                    MessageContent::Text(_) if is_assistant_with_tool_request => {
+                        // Skip the text part (the "thinking") of an assistant message
+                        // that also contains a tool request.
+                        has_tool_content = true; // To ensure the message is rebuilt
+                    }
                     MessageContent::ToolRequest(req) => {
                         has_tool_content = true;
                         // Convert tool request to text format

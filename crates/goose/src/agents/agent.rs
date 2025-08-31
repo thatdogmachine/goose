@@ -1111,7 +1111,6 @@ impl Agent {
                     }
                 }
 
-
                 let mut stream = Self::stream_response_from_provider(
                     self.provider().await?,
                     &system_prompt,

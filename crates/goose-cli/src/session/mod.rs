@@ -1093,6 +1093,7 @@ impl Session {
                                         if let Ok(tool_call) = &tool_request.tool_call {
                                             tracing::info!(counter.goose.tool_calls = 1,
                                                 tool_name = %tool_call.name,
+                                                tool_arg = format!("{:?}", tool_call.arguments),
                                                 "Tool call started"
                                             );
                                         }
