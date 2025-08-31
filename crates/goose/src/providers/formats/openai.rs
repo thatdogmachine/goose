@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::borrow::Cow;
 use std::ops::Deref;
+use tracing;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct DeltaToolCallFunction {
@@ -58,6 +59,7 @@ struct StreamingChunk {
 ///   some openai compatible endpoints use the anthropic image spec at the content level
 ///   even though the message structure is otherwise following openai, the enum switches this
 pub fn format_messages(messages: &[Message], image_format: &ImageFormat) -> Vec<Value> {
+    tracing::debug!(num_messages = messages.len(), "Formatting messages for OpenAI API");
     let mut messages_spec = Vec::new();
     for message in messages {
         let mut converted = json!({
@@ -66,10 +68,22 @@ pub fn format_messages(messages: &[Message], image_format: &ImageFormat) -> Vec<
 
         let mut output = Vec::new();
 
+        let is_assistant_with_tool_request = message.role == Role::Assistant
+            && message
+                .content
+                .iter()
+                .any(|c| matches!(c, MessageContent::ToolRequest(_)));
+
         for content in &message.content {
             match content {
                 MessageContent::Text(text) => {
-                    if !text.text.is_empty() {
+                    if is_assistant_with_tool_request {
+                        tracing::debug!("Stripping thinking text for assistant message with tool request.");
+                        if converted.get("content").is_none() {
+                            converted["content"] = json!("");
+                        }
+                    } else if !text.text.is_empty() {
+                        tracing::debug!(text = ?text.text, "Formatting text content.");
                         // Check for image paths in the text
                         if let Some(image_path) = detect_image_path(&text.text) {
                             // Try to load and convert the image
@@ -88,46 +102,52 @@ pub fn format_messages(messages: &[Message], image_format: &ImageFormat) -> Vec<
                     }
                 }
                 MessageContent::Thinking(_) => {
-                    // Thinking blocks are not directly used in OpenAI format
+                    tracing::debug!("Skipping Thinking content as it's not used in OpenAI format.");
                     continue;
                 }
                 MessageContent::RedactedThinking(_) => {
-                    // Redacted thinking blocks are not directly used in OpenAI format
+                    tracing::debug!("Skipping RedactedThinking content as it's not used in OpenAI format.");
                     continue;
                 }
                 MessageContent::ContextLengthExceeded(_) => {
+                    tracing::debug!("Skipping ContextLengthExceeded content.");
                     continue;
                 }
                 MessageContent::SummarizationRequested(_) => {
+                    tracing::debug!("Skipping SummarizationRequested content.");
                     continue;
                 }
-                MessageContent::ToolRequest(request) => match &request.tool_call {
-                    Ok(tool_call) => {
-                        let sanitized_name = sanitize_function_name(&tool_call.name);
-                        let tool_calls = converted
-                            .as_object_mut()
-                            .unwrap()
-                            .entry("tool_calls")
-                            .or_insert(json!([]));
+                MessageContent::ToolRequest(request) => {
+                    tracing::debug!(request = ?request, "Formatting ToolRequest.");
+                    match &request.tool_call {
+                        Ok(tool_call) => {
+                            let sanitized_name = sanitize_function_name(&tool_call.name);
+                            let tool_calls = converted
+                                .as_object_mut()
+                                .unwrap()
+                                .entry("tool_calls")
+                                .or_insert(json!([]));
 
-                        tool_calls.as_array_mut().unwrap().push(json!({
-                            "id": request.id,
-                            "type": "function",
-                            "function": {
-                                "name": sanitized_name,
-                                "arguments": tool_call.arguments.to_string(),
-                            }
-                        }));
+                            tool_calls.as_array_mut().unwrap().push(json!({
+                                "id": request.id,
+                                "type": "function",
+                                "function": {
+                                    "name": sanitized_name,
+                                    "arguments": tool_call.arguments.to_string(),
+                                }
+                            }));
+                        }
+                        Err(e) => {
+                            output.push(json!({
+                                "role": "tool",
+                                "content": format!("Error: {}", e),
+                                "tool_call_id": request.id
+                            }));
+                        }
                     }
-                    Err(e) => {
-                        output.push(json!({
-                            "role": "tool",
-                            "content": format!("Error: {}", e),
-                            "tool_call_id": request.id
-                        }));
-                    }
-                },
+                }
                 MessageContent::ToolResponse(response) => {
+                    tracing::debug!(response = ?response, "Formatting ToolResponse.");
                     match &response.tool_result {
                         Ok(contents) => {
                             // Send only contents with no audience or with Assistant in the audience
@@ -200,47 +220,60 @@ pub fn format_messages(messages: &[Message], image_format: &ImageFormat) -> Vec<
                     }
                 }
                 MessageContent::ToolConfirmationRequest(_) => {
+                    tracing::debug!("Skipping ToolConfirmationRequest.");
                     // Skip tool confirmation requests
                 }
                 MessageContent::Image(image) => {
+                    tracing::debug!(mime_type = ?image.mime_type, "Formatting Image content.");
                     // Handle direct image content
                     converted["content"] = json!([convert_image(image, image_format)]);
                 }
-                MessageContent::FrontendToolRequest(request) => match &request.tool_call {
-                    Ok(tool_call) => {
-                        let sanitized_name = sanitize_function_name(&tool_call.name);
-                        let tool_calls = converted
-                            .as_object_mut()
-                            .unwrap()
-                            .entry("tool_calls")
-                            .or_insert(json!([]));
+                MessageContent::FrontendToolRequest(request) => {
+                    tracing::debug!(request = ?request, "Formatting FrontendToolRequest.");
+                    match &request.tool_call {
+                        Ok(tool_call) => {
+                            let sanitized_name = sanitize_function_name(&tool_call.name);
+                            let tool_calls = converted
+                                .as_object_mut()
+                                .unwrap()
+                                .entry("tool_calls")
+                                .or_insert(json!([]));
 
-                        tool_calls.as_array_mut().unwrap().push(json!({
-                            "id": request.id,
-                            "type": "function",
-                            "function": {
-                                "name": sanitized_name,
-                                "arguments": tool_call.arguments.to_string(),
-                            }
-                        }));
+                            tool_calls.as_array_mut().unwrap().push(json!({
+                                "id": request.id,
+                                "type": "function",
+                                "function": {
+                                    "name": sanitized_name,
+                                    "arguments": tool_call.arguments.to_string(),
+                                }
+                            }));
+                        }
+                        Err(e) => {
+                            output.push(json!({
+                                "role": "tool",
+                                "content": format!("Error: {}", e),
+                                "tool_call_id": request.id
+                            }));
+                        }
                     }
-                    Err(e) => {
-                        output.push(json!({
-                            "role": "tool",
-                            "content": format!("Error: {}", e),
-                            "tool_call_id": request.id
-                        }));
-                    }
-                },
+                }
             }
         }
 
         if converted.get("content").is_some() || converted.get("tool_calls").is_some() {
+            if message.role == Role::Assistant
+                && converted.get("tool_calls").is_some()
+                && converted.get("content").is_none()
+            {
+                tracing::debug!("Adding empty content to assistant message with tool calls.");
+                converted.as_object_mut().unwrap().insert("content".to_string(), json!(""));
+            }
             output.insert(0, converted);
         }
         messages_spec.extend(output);
     }
 
+    tracing::debug!(messages_spec = ?messages_spec, "Formatted messages for OpenAI API.");
     messages_spec
 }
 

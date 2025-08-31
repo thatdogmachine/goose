@@ -207,7 +207,7 @@ impl ConfigKey {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ProviderUsage {
     pub model: String,
     pub usage: Usage,

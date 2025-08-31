@@ -151,6 +151,7 @@ impl Agent {
     /// Stream a response from the LLM provider.
     /// Handles toolshim transformations if needed
     pub(crate) async fn stream_response_from_provider(
+        &self,
         provider: Arc<dyn Provider>,
         system_prompt: &str,
         messages: &[Message],
@@ -158,6 +159,20 @@ impl Agent {
         toolshim_tools: &[Tool],
     ) -> Result<MessageStream, ProviderError> {
         let config = provider.get_model_config();
+
+        if config.toolshim {
+            // If toolshim is enabled, we cannot stream the response because we need to wait for the full
+            // response to be available before sending it to the interpreter model.
+            let (message, usage) = Agent::generate_response_from_provider(
+                    provider,
+                    system_prompt,
+                    messages,
+                    tools,
+                    toolshim_tools,
+                )
+                .await?;
+            return Ok(stream_from_single_message(message, usage));
+        }
 
         // Convert tool messages to text if toolshim is enabled
         let messages_for_provider = if config.toolshim {
