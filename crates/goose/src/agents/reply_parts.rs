@@ -164,13 +164,13 @@ impl Agent {
             // If toolshim is enabled, we cannot stream the response because we need to wait for the full
             // response to be available before sending it to the interpreter model.
             let (message, usage) = Agent::generate_response_from_provider(
-                    provider,
-                    system_prompt,
-                    messages,
-                    tools,
-                    toolshim_tools,
-                )
-                .await?;
+                provider,
+                system_prompt,
+                messages,
+                tools,
+                toolshim_tools,
+            )
+            .await?;
             return Ok(stream_from_single_message(message, usage));
         }
 
