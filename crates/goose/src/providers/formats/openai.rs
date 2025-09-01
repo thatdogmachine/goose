@@ -59,7 +59,10 @@ struct StreamingChunk {
 ///   some openai compatible endpoints use the anthropic image spec at the content level
 ///   even though the message structure is otherwise following openai, the enum switches this
 pub fn format_messages(messages: &[Message], image_format: &ImageFormat) -> Vec<Value> {
-    tracing::debug!(num_messages = messages.len(), "Formatting messages for OpenAI API");
+    tracing::debug!(
+        num_messages = messages.len(),
+        "Formatting messages for OpenAI API"
+    );
     let mut messages_spec = Vec::new();
     for message in messages {
         let mut converted = json!({
@@ -78,7 +81,9 @@ pub fn format_messages(messages: &[Message], image_format: &ImageFormat) -> Vec<
             match content {
                 MessageContent::Text(text) => {
                     if is_assistant_with_tool_request {
-                        tracing::debug!("Stripping thinking text for assistant message with tool request.");
+                        tracing::debug!(
+                            "Stripping thinking text for assistant message with tool request."
+                        );
                         if converted.get("content").is_none() {
                             converted["content"] = json!("");
                         }
@@ -106,7 +111,9 @@ pub fn format_messages(messages: &[Message], image_format: &ImageFormat) -> Vec<
                     continue;
                 }
                 MessageContent::RedactedThinking(_) => {
-                    tracing::debug!("Skipping RedactedThinking content as it's not used in OpenAI format.");
+                    tracing::debug!(
+                        "Skipping RedactedThinking content as it's not used in OpenAI format."
+                    );
                     continue;
                 }
                 MessageContent::ContextLengthExceeded(_) => {
@@ -266,7 +273,10 @@ pub fn format_messages(messages: &[Message], image_format: &ImageFormat) -> Vec<
                 && converted.get("content").is_none()
             {
                 tracing::debug!("Adding empty content to assistant message with tool calls.");
-                converted.as_object_mut().unwrap().insert("content".to_string(), json!(""));
+                converted
+                    .as_object_mut()
+                    .unwrap()
+                    .insert("content".to_string(), json!(""));
             }
             output.insert(0, converted);
         }
