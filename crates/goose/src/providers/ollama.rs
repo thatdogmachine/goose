@@ -18,6 +18,7 @@ use async_trait::async_trait;
 use futures::TryStreamExt;
 use regex::Regex;
 use rmcp::model::Tool;
+use serde::Deserialize;
 use serde_json::{json, Value};
 use std::io;
 use std::time::Duration;
@@ -176,6 +177,26 @@ impl Provider for OllamaProvider {
                 ),
             ],
         )
+    }
+
+    async fn fetch_supported_models(&self) -> Result<Option<Vec<String>>, ProviderError> {
+        #[derive(Deserialize, Debug)]
+        struct OllamaModel {
+            name: String,
+        }
+
+        #[derive(Deserialize, Debug)]
+        struct OllamaTagsResponse {
+            models: Vec<OllamaModel>,
+        }
+
+        let response = self.api_client.response_get("api/tags").await?;
+        let response_body: OllamaTagsResponse = response
+            .json()
+            .await
+            .map_err(|e| ProviderError::RequestFailed(format!("Failed to parse models response: {}", e)))?;
+        let model_names = response_body.models.into_iter().map(|m| m.name).collect();
+        Ok(Some(model_names))
     }
 
     fn get_model_config(&self) -> ModelConfig {
