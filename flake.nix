@@ -106,6 +106,7 @@
             rustfmt
             xorg.libxcb
             dbus
+            yarn
           ]);
           
           shellHook = ''
