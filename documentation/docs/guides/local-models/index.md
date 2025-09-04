@@ -47,3 +47,16 @@ import styles from '@site/src/components/Card/styles.module.css';
     />
   </div>
 </div>
+
+<div className={styles.categorySection}>
+  <h2 className={styles.categoryTitle}>📚 Operating System Considerations</h2>
+  <div className={styles.cardGrid}>
+    <Card 
+      title="Mac"
+      description="Mac"
+      link="/docs/guides/local-models/mac"
+      slug="Mac"
+    />
+
+  </div>
+</div>
