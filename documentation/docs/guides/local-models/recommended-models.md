@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: Goose on Ollama - Recommendations
+title: Goose on Ollama - Start Here
 description: "Goose and Ollama setup and Models"
 ---
 
@@ -8,93 +8,55 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import { PanelLeft, Bot } from 'lucide-react';
 
+## Objective
 
-introduction to using Ollama with Goose goes here, link to the other installation guides for Goose as needed
+By the time you finish reading, you should have:
+- Clear steps to get `Ollama` + `Goose` + `qwen2.5-coder:32b` calling tools locally on your choice of Operating System.
+- Have a way you can evaluate other models locally
+- Have a way you can evaluate using, or not, the __[Experimental Ollama Tool Shim](../../experimental/ollama)__
 
-## Setup
 
-Talk about using `GOOSE_TOOLSHIM_OLLAMA_MODEL`, `GOOSE_TOOLSHIM`, `OLLAMA_TIMEOUT`, `OLLAMA_CONTEXT_LENGTH`
+## Prerequisites
 
-## Recommended Models
+This page anticipates that you have:
 
-This list is co-written by our community, and your level of success will vary based on your hardware and platform. We cannot guarantee these will work for every Goose user. Join our [Discord community](https://discord.gg/block-opensource) to join the discussion.
-
-**michaelneale/qwen3:latest**
-- link to ollama page
-- RAM/VRAM needed
-- core features
-- what does it do well
-- what does it NOT do well
-- recommended settings:
-    - OLLAMA_TIMEOUT: 300
-    - GOOSE_TOOLSHIM: true
-
-**gpt-oss**
-- link to ollama page
-- RAM/VRAM needed for :20b and :120b variations
-- core features
-- what does it do well
-- what does it NOT do well
-- recommended settings:
-
-**qwen2.5-coder:32b**
-- link to ollama page
-- RAM/VRAM needed
-- core features
-- what does it do well
-- what does it NOT do well
-- recommended settings:
-    - OLLAMA_TIMEOUT: 1800
-    - GOOSE_TOOLSHIM: true
-    - GOOSE_TOOLSHIM_OLLAMA_MODEL: michaelneale/qwen3:latest
+- Familiarized yourself the relevant __Operating System Specifics__ page, if one exists for your OS, see __[here](./index.md)__
+    - Initially, settings mentioned here may be optional, however it is worth being aware of them before continuing
+- Followed the __Ollama on__ page for your OS. Again see __[here](./index.md)__
+- Goose installed using the __[Install Goose](../../getting-started/installation)__ guide
+    - This guide was written using __[1.7.0](https://github.com/block/goose/releases/tag/v1.7.0)__
+    - Functionality can change over time: if the guide does not work, you may want to experiment with the Goose version
 
 
 
+## Example configuration - this has been seen to work
 
-## Models reloaded
+# TBD: Model pinning
+__as a blog post this wasn't such a big issue, as an official guide it is more so: The existing instructions use model id's that are not pinned. As a consequence third parties can change what is installed over time, increasing the risk this guide is non deterministic.__
 
-`qwen2.5-coder:32b` was chosen on the basis of "least amount of investigation, most amount of apparently working. Will possibly fit in GPU RAM on a 32GB Mac, with appropriate `sysctl` tuning(?)
+Options:
 
-`qwen2.5-coder:14b` is more desirable from a performance (responsiveness) & size (GPU RAM) perspective, but anec-data-ly less accurate.
+(my assumption is that if this is done on ollama side it will result in a consistent sha dependency chain. I haven't actually validated this. An alternative might be to use hugging face repositories instead, but that seems like an over-complication.)
 
-`qwen3-coder:30b` is potentially more desirable across all axis, but anec-data-ly appears more inclined to give back control to the user before complete, in activities with more steps
+- no-one does it, and we call it out as a risk in the guide (this is important, because most of the point of this guide is to give the consumer something that is very likely to work)
+- I fork the models on ollama and create static names that will always deliver the same model
+- Someone in Block does it
 
-`gpt-oss:20b` came to my attention towards the end of writing this post (hat-tip to [samrocksc](https://discord.com/channels/1287729918100246654/1410949374296457310/1412468493588369458)) and looks promising across all axis.
-
-`gpt-oss:120b` following on from there, the 120b seems pretty interesting:
-```
-# From the Ollama log
-<snip>
-[GIN] 2025/09/03 - 10:50:10 | 200 |  3.298722875s |   192.168.0.156 | POST     "/v1/chat/completions"
-<snip>
-```
+__My preference is for someone in Block to do that, and failing that, the first option where we make the consumer aware__
 
 
 
-
-#### tldr: This author recommends using [the Goose release installers](https://github.com/block/goose/releases/tag/v1.7.0) and (ultimately) used [1.7.0](https://github.com/block/goose/releases/download/v1.7.0/Goose.zip) during this install.
-
-For the cli, first grab the [download_cli.sh](https://github.com/block/goose/releases/download/v1.7.0/download_cli.sh) and then:
-```
-GOOSE_VERSION=v1.7.0 ~/Downloads/download_cli.sh
-```
-
-
-## Models
-
-There is plenty of pre-existing content about [how to work with models](https://www.youtube.com/watch?v=9jXO6Ln7Sbw). Not all of it will help us here. 
-
-We use the [Experimental Ollama Tool shim](../../../../docs/experimental/ollama)
+We use the __[Experimental Ollama Tool shim](../../experimental/ollama)__
 ```
 GOOSE_TOOLSHIM=1
 ```
 
-We will not use the default Tool shim model
+We will not use the default Tool shim model. Instead we will use one created by one of the Block team.
 ```
 GOOSE_TOOLSHIM_OLLAMA_MODEL=michaelneale/qwen3:latest
 ```
 
-We will increase the Ollama timeout to 30 minutes
+We will increase the Ollama timeout to 30 minutes - the rationale being: if you already waited 10 mins (default timeout) for a request to complete, the chances are you don't mind waiting up to 30 minutes. This setting should be adjusted per operator preference.
 ```
 OLLAMA_TIMEOUT=1800
 ```
@@ -118,9 +80,9 @@ before attempting to launch Goose.
 
 ## Configuring Goose
 
-We [remember](../../../../goose/docs/guides/config-file) our configuration file is at `~/.config/goose/config.yaml`
+We __[remember](../config-file)__ our configuration file is at `~/.config/goose/config.yaml`
 
-And that if we choose to, we can set all required configuration at the root of that file. The specific values to add there being:
+And that if we choose to, we can set all these configuration values for Ollama use at the root of that file. If doing so, the specific values to set there being:
 ```
 OLLAMA_TIMEOUT: 1800
 GOOSE_TOOLSHIM: true
@@ -130,21 +92,93 @@ GOOSE_TOOLSHIM_OLLAMA_MODEL: michaelneale/qwen3:latest
 
 ## Launching Goose
 
-Instead of / as well as setting the necessary values in the config file, we remember [it is also possible to pass (override)](../../../../goose/docs/guides/environment-variables#notes) these as `ENV VARS`, for example:
+Instead of / as well as setting the necessary values in the config file, we remember __[it is also possible to pass (override)](../environment-variables#notes)__ these as `ENV VARS`, for example:
 
-### CLI
+<Tabs groupId="interface">
+  <TabItem value="ui" label="Goose Desktop" default>
+    ```
+    # all one line, wrapped...
+    OLLAMA_TIMEOUT=1800 GOOSE_TOOLSHIM=true GOOSE_TOOLSHIM_OLLAMA_MODEL=michaelneale/qwen3:latest open -a <path/to/>goose.app
+    ```
 
-```
-# all one line, wrapped...
-OLLAMA_TIMEOUT=1800 GOOSE_TOOLSHIM=true GOOSE_TOOLSHIM_OLLAMA_MODEL=michaelneale/qwen3:latest <path/to/goose-cli-binary/>goose session
-```
+    Or, if you elected to set the values in `~/.config/goose/config.yaml` earlier, you can simply start the Goose Desktop App in the MacOS UI.
 
-### Desktop
+    The `ENV VARS` approach can be useful when experimenting with multiple models, but is up to the preference of the user.
+  </TabItem>
 
-```
-# all one line, wrapped...
-OLLAMA_TIMEOUT=1800 GOOSE_TOOLSHIM=true GOOSE_TOOLSHIM_OLLAMA_MODEL=michaelneale/qwen3:latest open -a <path/to/>goose.app
-```
+  <TabItem value="cli" label="Goose CLI">
+    ```
+    # all one line, wrapped...
+    OLLAMA_TIMEOUT=1800 GOOSE_TOOLSHIM=true GOOSE_TOOLSHIM_OLLAMA_MODEL=michaelneale/qwen3:latest <path/to/goose-cli-binary/>goose session
+    ```
+  </TabItem>
+</Tabs>
 
-This can be useful when experimenting with multiple models, but is the choice of the user
 
+## Recommended Models
+
+This list is co-written by our community, and your level of success will vary based on your hardware and platform. We cannot guarantee these will work for every Goose user. Join our [Discord community](https://discord.gg/block-opensource) to join the discussion.
+
+It is worth remembering there has been prior analysis: __[Community-Inspired Benchmarking: The Goose Vibe Check](https://block.github.io/goose/blog/2025/03/31/goose-benchmark/)__, with `qwen2.5-coder:32b` being the highest scoring Ollama hosted model. At the time of writing, local re-tests using goose-bench have not been completed.
+
+In the model list below, `SIZE` = `GB`
+
+**michaelneale/qwen3:latest**
+- [link to ollama page](https://ollama.com/michaelneale/qwen3)
+- RAM/VRAM needed
+    ```
+    ollama ps michaelneale/qwen3 | awk 'NR==1{print $1,$3; next}{print $1,$3}' | column -t
+    NAME                       SIZE
+    michaelneale/qwen3:latest  9.6
+    ```
+- what does it do well
+    - fulfil `GOOSE_TOOLSHIM_OLLAMA_MODEL` 
+- what does it NOT do well
+    - n/a
+- see also
+    - See also: [Goose and Qwen3 for Local Execution](https://block.github.io/goose/blog/2025/05/12/local-goose-qwen3/)
+
+
+**gpt-oss:20b**
+- [link to ollama page](https://ollama.com/library/gpt-oss:20b)
+- RAM/VRAM needed
+    ```
+    ollama ps gpt-oss:20b | awk 'NR==1{print $1,$3; next}{print $1,$3}' | column -t
+    NAME         SIZE
+    gpt-oss:20b  18
+    ```
+- what does it do well
+    - anec-data-ly quick to respond compared with other similar sized models
+- what does it NOT do well
+    - like qwen2.5-coder:32b, has been seen to get stuck composing shell commands
+- see also
+    - n/a
+
+**gpt-oss:120b**
+- [link to ollama page](https://ollama.com/library/gpt-oss:120b)
+- RAM/VRAM needed
+    ```
+    ollama ps gpt-oss:120b | awk 'NR==1{print $1,$3; next}{print $1,$3}' | column -t
+    NAME          SIZE
+    gpt-oss:120b  74
+    ```
+- what does it do well
+    - anec-data-ly quick to respond compared with other similar sized models. "quick" in this context means sub two minute responses, vs 4+ minute thinking time on MacBook Pro/Max/128GB type hardware
+- what does it NOT do well
+    - n/a
+- see also
+    - n/a
+
+**qwen2.5-coder:32b**
+- link to ollama page
+- RAM/VRAM needed
+- use in conjunction with toolshim
+    - yes
+- what does it do well
+    - multi step activities generally progress to completion without babysitting
+- what does it NOT do well
+    - anec-data-ly slower to respond
+    - may need additional support composing shell commands. This may be a consequence of toolshim interaction
+- see also
+    - n/a
+   
