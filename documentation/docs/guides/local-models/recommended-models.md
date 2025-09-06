@@ -27,7 +27,7 @@ In the model list below, `SIZE` = `GB`
 - what does it NOT do well
     - n/a
 - see also
-    - See also: [Goose and Qwen3 for Local Execution](https://block.github.io/goose/blog/2025/05/12/local-goose-qwen3/)
+    - [Goose and Qwen3 for Local Execution](https://block.github.io/goose/blog/2025/05/12/local-goose-qwen3/)
 
 
 **gpt-oss:20b**
@@ -38,6 +38,8 @@ In the model list below, `SIZE` = `GB`
     NAME         SIZE
     gpt-oss:20b  18
     ```
+- use in conjunction with toolshim
+    - yes
 - what does it do well
     - anec-data-ly quick to respond compared with other similar sized models
 - what does it NOT do well
@@ -53,6 +55,8 @@ In the model list below, `SIZE` = `GB`
     NAME          SIZE
     gpt-oss:120b  74
     ```
+- use in conjunction with toolshim
+    - yes
 - what does it do well
     - anec-data-ly quick to respond compared with other similar sized models. "quick" in this context means sub two minute responses, vs 4+ minute thinking time on MacBook Pro/Max/128GB type hardware
 - what does it NOT do well
@@ -61,15 +65,47 @@ In the model list below, `SIZE` = `GB`
     - n/a
 
 **qwen2.5-coder:32b**
-- link to ollama page
+- [link to ollama page](https://ollama.com/library/qwen2.5-coder:32b)
 - RAM/VRAM needed
+    ```
+    ollama ps qwen2.5-coder:32b | awk 'NR==1{print $1,$3; next}{print $1,$3}' | column -t
+    NAME               SIZE
+    qwen2.5-coder:32b  27
+    ```
 - use in conjunction with toolshim
     - yes
 - what does it do well
     - multi step activities generally progress to completion without babysitting
 - what does it NOT do well
     - anec-data-ly slower to respond
-    - may need additional support composing shell commands. This may be a consequence of toolshim interaction
+    - may need additional support composing shell commands. This may be a consequence of Goose tool shim interaction
 - see also
     - n/a
    
+**qwen3-coder:30b**
+- [link to ollama page](https://ollama.com/library/qwen3-coder:30b)
+- RAM/VRAM needed
+
+- use in conjunction with toolshim
+    - yes
+- what does it do well
+    - anec-data-ly responsive / faster to reply vs other models of a similar size
+- what does it NOT do well
+    - potentially has a relationship with context size, but has been seen to give up multi-step actions
+- see also
+    - n/a
+
+**qwq:32b**
+- [link to ollama page](https://ollama.com/library/qwq:32b)
+- RAM/VRAM needed
+
+- use in conjunction with toolshim
+    - yes
+- use in conjunction with toolshim
+    - yes
+- what does it do well
+    - tbd
+- what does it NOT do well
+    - tbd
+- see also
+    - n/a
