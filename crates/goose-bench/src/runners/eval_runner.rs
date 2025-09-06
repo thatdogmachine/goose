@@ -25,13 +25,13 @@ impl EvalRunner {
         Ok(EvalRunner { config })
     }
 
-    fn construct_model_dir_name(model: &BenchModel) -> String {
-        let model_name = model.name.clone();
-        let provider_name = model.provider.clone();
+    fn construct_model_dir_name(goose_model: &BenchModel) -> String {
+        let model_name = goose_model.name.clone();
+        let provider_name = goose_model.provider.clone();
 
         let shim_suffix = {
             let mut shim_name = "".to_string();
-            if let Some(shim_opt) = &model.tool_shim {
+            if let Some(shim_opt) = &goose_model.tool_shim {
                 if shim_opt.use_tool_shim {
                     let shim_model =
                         shim_opt.tool_shim_model.clone().unwrap_or("default".to_string());
