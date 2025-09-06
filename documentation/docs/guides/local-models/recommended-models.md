@@ -85,7 +85,11 @@ In the model list below, `SIZE` = `GB`
 **qwen3-coder:30b**
 - [link to ollama page](https://ollama.com/library/qwen3-coder:30b)
 - RAM/VRAM needed
-
+    ```
+    ollama ps qwen3-coder:30b | awk 'NR==1{print $1,$3; next}{print $1,$3}' | column -t
+    NAME               SIZE
+    qwen3-coder:30b    23 GB
+    ```
 - use in conjunction with toolshim
     - yes
 - what does it do well
