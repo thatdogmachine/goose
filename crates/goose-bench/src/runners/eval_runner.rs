@@ -25,32 +25,33 @@ impl EvalRunner {
         Ok(EvalRunner { config })
     }
 
-    fn create_work_dir(&self, config: &BenchRunConfig) -> Result<BenchmarkWorkDir> {
-        let goose_model = config
-            .models
-            .first()
-            .context("No model specified in configuration")?;
-        let model_name = goose_model.name.clone();
-        let provider_name = goose_model.provider.clone();
+    fn construct_model_dir_name(model: &BenchModel) -> String {
+        let model_name = model.name.clone();
+        let provider_name = model.provider.clone();
 
-        // construct work-dir name to have a shim component only if shim configured to be used
-        let work_dir_name_shim = {
+        let shim_suffix = {
             let mut shim_name = "".to_string();
-            if let Some(shim_opt) = &goose_model.tool_shim {
+            if let Some(shim_opt) = &model.tool_shim {
                 if shim_opt.use_tool_shim {
-                    let shim_model = if let Some(shim_model) = &shim_opt.tool_shim_model {
-                        shim_model.clone()
-                    } else {
-                        "default".to_string()
-                    };
+                    let shim_model =
+                        shim_opt.tool_shim_model.clone().unwrap_or("default".to_string());
                     shim_name = format!("-{}-shim-model", shim_model);
                 }
             }
             shim_name
         };
 
+        format!("{}-{}{}", provider_name, model_name, shim_suffix)
+    }
+
+    fn create_work_dir(&self, config: &BenchRunConfig) -> Result<BenchmarkWorkDir> {
+        let goose_model = config
+            .models
+            .first()
+            .context("No model specified in configuration")?;
+
         let include_dir = config.include_dirs.clone();
-        let work_dir_name = format!("{}-{}{}", provider_name, model_name, work_dir_name_shim);
+        let work_dir_name = Self::construct_model_dir_name(goose_model);
         let work_dir = BenchmarkWorkDir::new(work_dir_name, include_dir);
         Ok(work_dir)
     }
@@ -175,17 +176,15 @@ impl EvalRunner {
     }
 
     pub fn path_for_eval(model: &BenchModel, eval: &BenchEval, run_id: String) -> PathBuf {
-        let provider = model.provider.clone();
-        let model = model.name.clone();
+        let model_dir_name = Self::construct_model_dir_name(model);
         let eval_path = &eval.selector.replace(":", std::path::MAIN_SEPARATOR_STR);
         let eval_results_location = format!(
-            "{}-{}/run-{}{}{}",
-            &provider,
-            model,
+            "{}/run-{}{}{}",
+            model_dir_name,
             run_id,
             std::path::MAIN_SEPARATOR_STR,
             eval_path
         );
-        PathBuf::from(eval_results_location.clone())
+        PathBuf::from(eval_results_location)
     }
 }
