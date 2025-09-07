@@ -149,14 +149,21 @@ impl ModelRunner {
         for (suite, evals) in suites.iter() {
             let mut suite_result = SuiteResult::new(suite.clone());
             for eval_selector in evals {
-                let mut eval_path =
+                let relative_eval_path =
                     EvalRunner::path_for_eval(&model, eval_selector, run_id.clone());
-                eval_path.push(self.config.eval_result_filename.clone());
 
-                let content = read_to_string(&eval_path).with_context(|| {
+                // The path from path_for_eval is relative, but the process is running inside the
+                // benchmark directory. We need to join it with the CWD to get the absolute path.
+                let mut absolute_eval_path = std::env::current_dir()
+                    .context("Failed to get current working directory")?
+                    .join(&relative_eval_path);
+
+                absolute_eval_path.push(self.config.eval_result_filename.clone());
+
+                let content = read_to_string(&absolute_eval_path).with_context(|| {
                     format!(
                         "Failed to read evaluation results from {}",
-                        eval_path.display()
+                        absolute_eval_path.display()
                     )
                 })?;
 
@@ -167,15 +174,21 @@ impl ModelRunner {
 
                 // use current eval to determine where the summary should be written
                 if summary_path.is_none() {
-                    let mut result = PathBuf::new();
-                    let mut iter = eval_path.components();
-                    if let Some(first) = iter.next() {
-                        result.push(first);
-                        if let Some(second) = iter.next() {
-                            result.push(second);
+                    // The summary should be in the model's directory, which is the parent of the `run-X` directory.
+                    // We walk up the ancestors of the result file path until we find the directory that contains
+                    // the `run-X` directory.
+                    let mut path_ancestors = absolute_eval_path.ancestors();
+                    // Skip the file itself.
+                    path_ancestors.next();
+                    // Find the ancestor directory whose name starts with "run-".
+                    if let Some(run_dir) = path_ancestors
+                        .find(|p| p.file_name().map_or(false, |n| n.to_string_lossy().starts_with("run-")))
+                    {
+                        // The summary path is the parent of that `run-X` directory.
+                        if let Some(model_dir) = run_dir.parent() {
+                            summary_path = Some(model_dir.to_path_buf());
                         }
                     }
-                    summary_path = Some(result);
                 }
             }
             results.add_suite(suite_result);
@@ -231,6 +244,8 @@ impl ModelRunner {
                             shim_model.clone(),
                         ));
                     }
+                } else {
+                    shim_envs.push(("GOOSE_TOOLSHIM".to_string(), "false".to_string()));
                 }
             }
         }
