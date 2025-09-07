@@ -33,5 +33,10 @@ pub fn parallel_bench_cmd(bench_cmd: String, config: String, envs: Vec<(String, 
         cmd.env(key, value);
     }
 
+    // Ensure RUST_LOG is passed to the child process if it exists
+    if let Ok(rust_log) = env::var("RUST_LOG") {
+        cmd.env("RUST_LOG", rust_log);
+    }
+
     cmd.spawn().expect("Failed to spawn child process")
 }

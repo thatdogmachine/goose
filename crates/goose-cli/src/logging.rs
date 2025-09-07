@@ -114,10 +114,11 @@ fn setup_logging_internal(
                 .with_line_number(true)
                 .pretty();
 
-            // Base filter
-            let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-                // Set default levels for different modules
+            // Base filter for the file logger, which respects RUST_LOG
+            let file_env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+                // Set default levels for different modules if RUST_LOG is not set
                 EnvFilter::new("")
+                    .add_directive("goose_bench=debug".parse().unwrap())
                     // Set mcp-server module to DEBUG
                     .add_directive("mcp_server=debug".parse().unwrap())
                     // Set mcp-client to DEBUG
@@ -130,10 +131,13 @@ fn setup_logging_internal(
                     .add_directive(LevelFilter::WARN.into())
             });
 
+            // A separate, simpler filter for the console to avoid breaking stdio extensions
+            let console_filter = EnvFilter::new("warn");
+
             // Start building the subscriber
             let mut layers = vec![
-                file_layer.with_filter(env_filter).boxed(),
-                console_layer.with_filter(LevelFilter::WARN).boxed(),
+                file_layer.with_filter(file_env_filter).boxed(),
+                console_layer.with_filter(console_filter).boxed(),
             ];
 
             // Only add ErrorCaptureLayer if not in test mode
