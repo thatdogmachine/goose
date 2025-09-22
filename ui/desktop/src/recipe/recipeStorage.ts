@@ -39,9 +39,9 @@ export function getStorageDirectory(isGlobal: boolean): string {
   if (isGlobal) {
     return '~/.config/goose/recipes';
   } else {
-    const projectDir = window.appConfig.get('GOOSE_WORKING_DIR') as string;
-    // Fallback to (broken) relative path if projectDir is not available for some reason
-    return projectDir ? `${projectDir}/.goose/recipes` : '.goose/recipes';
+    // For directory recipes, build absolute path using working directory
+    const workingDir = window.appConfig.get('GOOSE_WORKING_DIR') as string;
+    return `${workingDir}/.goose/recipes`;
   }
 }
 
