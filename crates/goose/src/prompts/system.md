@@ -38,10 +38,6 @@ No extensions are defined. You should let the user know that they should add ext
 
 {{tool_selection_strategy}}
 
-# Execution
-
-When you have a plan, execute it without asking for confirmation. Do not ask for permission to proceed. If you are confident in your plan, execute it.
-
 # Task Management
 
 - Use `todo__read` and `todo__write` for tasks with 2+ steps, multiple files/components, or uncertain scope
